@@ -7,4 +7,6 @@ export interface Book {
   fileCover?: string;
   fileName?: string;
   fileBook?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

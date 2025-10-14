@@ -1,16 +1,24 @@
 import 'reflect-metadata';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { container } from './container';
 import { BooksRepository } from './repositories/books-repository.abstract';
-
-console.log('🔧 Starting application initialization...');
+import { Book } from './entities/book.interface';
 
 const app = express();
-app.use(express.json());
 
-app.use((req, res, next) => {
+// Middleware для парсинга JSON
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware для установки charset
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
+// Middleware для обработки URL encoding
+app.use((req: Request, res: Response, next: NextFunction) => {
   try {
-    // Декодируем URL параметры
     if (req.params) {
       for (const key in req.params) {
         if (typeof req.params[key] === 'string') {
@@ -25,95 +33,63 @@ app.use((req, res, next) => {
   }
 });
 
+// Интерфейсы для типизации запросов
+interface CreateBookRequest extends Request {
+  body: Omit<Book, 'id'>;
+}
+
+interface UpdateBookRequest extends Request {
+  body: Partial<Book>;
+}
+
 // Корневой маршрут
-app.get('/', (req, res) => {
-  console.log('✅ GET / - serving root route');
+app.get('/', (req: Request, res: Response) => {
   res.json({
     message: 'Library API is running!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    endpoints: [
+      'GET /health',
+      'GET /api/books',
+      'GET /api/books/:id',
+      'POST /api/books',
+      'PUT /api/books/:id',
+      'DELETE /api/books/:id',
+      'GET /api/books/search/:title'
+    ]
   });
 });
 
 // Health check
-app.get('/health', (req, res) => {
-  console.log('✅ GET /health - serving health check');
-  res.json({ 
-    status: 'OK', 
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'OK',
     message: 'Library API is running',
     timestamp: new Date().toISOString()
   });
 });
 
 // Получить все книги
-app.get('/api/books', async (req, res) => {
+app.get('/api/books', async (req: Request, res: Response) => {
   try {
-    console.log('🔄 GET /api/books - getting repository from container');
     const repo = container.get(BooksRepository);
-    console.log('✅ Repository obtained from container');
-    
-    console.log('🔄 Calling getBooks() method');
     const books = await repo.getBooks();
-    console.log(`✅ getBooks() returned ${books.length} books`);
-    
     res.json(books);
   } catch (error) {
-    console.error('❌ Error in GET /api/books:', error);
-    console.error('❌ Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Failed to get books',
-      details: error.message 
-    });
-  }
-});
-
-// Создать книгу
-app.post('/api/books', async (req, res) => {
-  try {
-    console.log('🔄 POST /api/books - received data:', req.body);
-    
-    const { title, description, authors, favorite } = req.body;
-    
-    if (!title || !description || !authors) {
-      console.log('❌ Missing required fields');
-      return res.status(400).json({ 
-        error: 'Title, description and authors are required' 
-      });
-    }
-    
-    console.log('🔄 Getting repository from container');
-    const repo = container.get(BooksRepository);
-    console.log('✅ Repository obtained from container');
-    
-    console.log('🔄 Calling createBook() method');
-    const newBook = await repo.createBook({
-      title,
-      description,
-      authors,
-      favorite: favorite || false
-    });
-    
-    console.log('✅ createBook() returned:', newBook);
-    res.status(201).json(newBook);
-  } catch (error) {
-    console.error('❌ Error in POST /api/books:', error);
-    console.error('❌ Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Failed to create book',
-      details: error.message 
-    });
+    console.error('Error getting books:', error);
+    res.status(500).json({ error: 'Failed to get books' });
   }
 });
 
 // Получить книгу по ID
-app.get('/api/books/:id', async (req, res) => {
+app.get('/api/books/:id', async (req: Request, res: Response) => {
   try {
     const repo = container.get(BooksRepository);
     const book = await repo.getBook(req.params.id);
-    
+
     if (!book) {
       return res.status(404).json({ error: 'Book not found' });
     }
-    
+
     res.json(book);
   } catch (error) {
     console.error('Error getting book:', error);
@@ -121,16 +97,45 @@ app.get('/api/books/:id', async (req, res) => {
   }
 });
 
+// Создать книгу
+app.post('/api/books', async (req: CreateBookRequest, res: Response) => {
+  try {
+    const { title, description, authors, favorite, fileCover, fileName, fileBook } = req.body;
+
+    if (!title || !description || !authors) {
+      return res.status(400).json({
+        error: 'Title, description and authors are required'
+      });
+    }
+
+    const repo = container.get(BooksRepository);
+    const newBook = await repo.createBook({
+      title,
+      description,
+      authors,
+      favorite: favorite || false,
+      fileCover,
+      fileName,
+      fileBook
+    });
+
+    res.status(201).json(newBook);
+  } catch (error) {
+    console.error('Error creating book:', error);
+    res.status(500).json({ error: 'Failed to create book' });
+  }
+});
+
 // Обновить книгу
-app.put('/api/books/:id', async (req, res) => {
+app.put('/api/books/:id', async (req: UpdateBookRequest, res: Response) => {
   try {
     const repo = container.get(BooksRepository);
     const updatedBook = await repo.updateBook(req.params.id, req.body);
-    
+
     if (!updatedBook) {
       return res.status(404).json({ error: 'Book not found' });
     }
-    
+
     res.json(updatedBook);
   } catch (error) {
     console.error('Error updating book:', error);
@@ -139,15 +144,15 @@ app.put('/api/books/:id', async (req, res) => {
 });
 
 // Удалить книгу
-app.delete('/api/books/:id', async (req, res) => {
+app.delete('/api/books/:id', async (req: Request, res: Response) => {
   try {
     const repo = container.get(BooksRepository);
     const deleted = await repo.deleteBook(req.params.id);
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'Book not found' });
     }
-    
+
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting book:', error);
@@ -156,7 +161,7 @@ app.delete('/api/books/:id', async (req, res) => {
 });
 
 // Поиск книг по названию
-app.get('/api/books/search/:title', async (req, res) => {
+app.get('/api/books/search/:title', async (req: Request, res: Response) => {
   try {
     const repo = container.get(BooksRepository);
     const books = await repo.findBooksByTitle(req.params.title);
@@ -166,18 +171,27 @@ app.get('/api/books/search/:title', async (req, res) => {
     res.status(500).json({ error: 'Failed to search books' });
   }
 });
-const PORT = process.env.PORT || 3003;
 
-// Проверяем контейнер при запуске
-console.log('🔧 Testing container initialization...');
-try {
-  const testRepo = container.get(BooksRepository);
-  console.log('✅ Container initialized successfully');
-} catch (error) {
-  console.error('❌ Container initialization failed:', error);
-}
+// Обработчик 404
+app.use('*', (req: Request, res: Response) => {
+  res.status(404).json({
+    error: 'Route not found',
+    availableRoutes: ['/', '/health', '/api/books']
+  });
+});
+
+// Обработчик ошибок
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Unhandled error:', error);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: error.message
+  });
+});
+
+const PORT = process.env.PORT || 3003;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log('📚 Library API with IoC Container');
+  console.log('📚 Library API with TypeScript and IoC Container');
 });
