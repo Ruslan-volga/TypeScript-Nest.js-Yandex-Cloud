@@ -5,7 +5,9 @@ import {
   Put, 
   Delete, 
   Body, 
-  Param 
+  Param,
+  HttpCode,
+  HttpStatus
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from '../schemas/user.schema';
@@ -40,7 +42,8 @@ export class UsersController {
   }
 
   @Delete(':id')
-  async deleteUser(@Param('id') id: string): Promise<User> {
-    return this.usersService.remove(id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteUser(@Param('id') id: string): Promise<void> {
+    await this.usersService.remove(id);
   }
 }
