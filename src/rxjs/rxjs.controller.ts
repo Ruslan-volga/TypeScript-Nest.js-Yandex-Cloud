@@ -1,7 +1,8 @@
 import { Controller, Get, Query } from "@nestjs/common";
 import { RxjsService } from "./rxjs.service";
 import { IParamText } from "./interfaces/text-param";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, Observable } from "rxjs";
+import { CombinedSearchResult } from "./interfaces/text-param";
 
 @Controller("rxjs")
 export class RxjsController {
@@ -13,13 +14,18 @@ export class RxjsController {
   }
 
   @Get("both")
-  async searchBoth(@Query('text') text: string) {
-    return await this.rxjsService.searchBoth(text);
+  searchBoth(@Query('text') text: string): Observable<CombinedSearchResult> {
+    return this.rxjsService.searchBoth(text);
   }
 
   @Get("sequential")
-  async sequentialSearch(@Query('text') text: string) {
-    return await firstValueFrom(this.rxjsService.searchSequential(text));
+  sequentialSearch(@Query('text') text: string): Observable<CombinedSearchResult> {
+    return this.rxjsService.searchSequential(text);
+  }
+
+  @Get("realtime")
+  realtimeSearch(@Query('text') text: string): Observable<CombinedSearchResult> {
+    return this.rxjsService.searchRealtime(text);
   }
 
   @Get("github")

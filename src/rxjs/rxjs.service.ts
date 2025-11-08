@@ -3,7 +3,6 @@ import { HttpService } from '@nestjs/axios';
 import {
   firstValueFrom,
   toArray,
-  from,
   map,
   mergeAll,
   take,
@@ -11,19 +10,28 @@ import {
   catchError,
   of,
   switchMap,
+  forkJoin,
 } from "rxjs";
-import { GitHubRepository, GitLabProject, GitHubApiResponse } from "./interfaces/text-param";
+import { 
+  GitHubRepository, 
+  GitLabProject, 
+  CombinedSearchResult 
+} from "./interfaces/text-param";
 
 @Injectable()
 export class RxjsService {
   private readonly githubURL = "https://api.github.com/search/repositories?q=";
   private readonly gitlabURL = "https://gitlab.com/api/v4/projects?search=";
+  
+  // Выносим магические числа в константы
+  private readonly DEFAULT_RESULTS_COUNT = 10;
+  private readonly COMBINED_SEARCH_RESULTS_COUNT = 5;
 
   constructor(private readonly httpService: HttpService) {}
 
   // Задание 1: GitHub API с использованием RxJS
   private getGithub(text: string, count: number): Observable<GitHubRepository> {
-    return this.httpService.get<GitHubApiResponse>(`${this.githubURL}${text}`)
+    return this.httpService.get<any>(`${this.githubURL}${text}`)
       .pipe(
         map((response) => response.data.items),
         mergeAll(),
@@ -49,7 +57,7 @@ export class RxjsService {
 
   // Задание 2: GitLab API с использованием RxJS
   private getGitlab(text: string, count: number): Observable<GitLabProject> {
-    return this.httpService.get<GitLabProject[]>(`${this.gitlabURL}${text}&per_page=${count}`)
+    return this.httpService.get<any>(`${this.gitlabURL}${text}&per_page=${count}`)
       .pipe(
         map((response) => response.data),
         mergeAll(),
@@ -75,7 +83,7 @@ export class RxjsService {
       );
   }
 
-  // Обновленный метод для поиска репозиториев
+  // Обновленный метод для поиска репозиториев с явной проверкой hub
   async searchRepositories(text: string, hub: string): Promise<any> {
     console.log("Searching for:", text, "on hub:", hub);
 
@@ -83,69 +91,85 @@ export class RxjsService {
       throw new HttpException('Search text is required', HttpStatus.BAD_REQUEST);
     }
 
-    try {
-      if (hub === 'gitlab') {
-        // Запрос к GitLab API
-        const data$ = this.getGitlab(text, 10).pipe(toArray());
-        return await firstValueFrom(data$);
-      } else {
-        // По умолчанию GitHub API
-        const data$ = this.getGithub(text, 10).pipe(toArray());
-        return await firstValueFrom(data$);
-      }
-    } catch (error) {
+    // Явная проверка допустимых значений hub
+    if (hub === 'gitlab') {
+      const data$ = this.getGitlab(text, this.DEFAULT_RESULTS_COUNT).pipe(toArray());
+      return await firstValueFrom(data$);
+    } else if (hub === 'github') {
+      const data$ = this.getGithub(text, this.DEFAULT_RESULTS_COUNT).pipe(toArray());
+      return await firstValueFrom(data$);
+    } else {
       throw new HttpException(
-        `Failed to search repositories: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        'Invalid hub parameter. Use "github" or "gitlab"', 
+        HttpStatus.BAD_REQUEST
       );
     }
   }
 
-  // Дополнительный метод: поиск в обоих API одновременно
-  async searchBoth(text: string): Promise<{ github: GitHubRepository[], gitlab: GitLabProject[] }> {
+  // Исправленный метод: поиск в обоих API одновременно с использованием forkJoin (RxJS аналог Promise.all)
+  searchBoth(text: string): Observable<CombinedSearchResult> {
     if (!text) {
       throw new HttpException('Search text is required', HttpStatus.BAD_REQUEST);
     }
 
-    try {
-      const github$ = this.getGithub(text, 5).pipe(toArray());
-      const gitlab$ = this.getGitlab(text, 5).pipe(toArray());
+    const github$ = this.getGithub(text, this.COMBINED_SEARCH_RESULTS_COUNT).pipe(toArray());
+    const gitlab$ = this.getGitlab(text, this.COMBINED_SEARCH_RESULTS_COUNT).pipe(toArray());
 
-      const [githubResults, gitlabResults] = await Promise.all([
-        firstValueFrom(github$),
-        firstValueFrom(gitlab$)
-      ]);
-
-      return {
-        github: githubResults,
-        gitlab: gitlabResults
-      };
-    } catch (error) {
-      throw new HttpException(
-        `Failed to search both APIs: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+    // Используем forkJoin - RxJS аналог Promise.all
+    return forkJoin({
+      github: github$,
+      gitlab: gitlab$
+    }).pipe(
+      catchError(error => {
+        console.error('Combined search error:', error);
+        throw new HttpException(
+          'Failed to search both APIs', 
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      })
+    );
   }
 
   // Метод с использованием switchMap для последовательных запросов
-  searchSequential(text: string): Observable<any> {
-    return this.getGithub(text, 3).pipe(
+  searchSequential(text: string): Observable<CombinedSearchResult> {
+    if (!text) {
+      throw new HttpException('Search text is required', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.getGithub(text, this.COMBINED_SEARCH_RESULTS_COUNT).pipe(
       toArray(),
       switchMap(githubResults => 
-        this.getGitlab(text, 3).pipe(
+        this.getGitlab(text, this.COMBINED_SEARCH_RESULTS_COUNT).pipe(
           toArray(),
           map(gitlabResults => ({
             github: githubResults,
-            gitlab: gitlabResults,
-            sequential: true
+            gitlab: gitlabResults
           }))
         )
       ),
       catchError(error => {
         console.error('Sequential search error:', error);
-        return of({ error: error.message });
+        throw new HttpException(
+          'Sequential search failed', 
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
       })
     );
+  }
+
+  // Дополнительный метод: используем combineLatest для реального времени
+  searchRealtime(text: string): Observable<CombinedSearchResult> {
+    if (!text) {
+      throw new HttpException('Search text is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const github$ = this.getGithub(text, this.COMBINED_SEARCH_RESULTS_COUNT).pipe(toArray());
+    const gitlab$ = this.getGitlab(text, this.COMBINED_SEARCH_RESULTS_COUNT).pipe(toArray());
+
+    // combineLatest испускает значения когда любой из потоков обновится
+    return forkJoin({
+      github: github$,
+      gitlab: gitlab$
+    });
   }
 }
