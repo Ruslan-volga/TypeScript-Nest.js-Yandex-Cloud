@@ -26,20 +26,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object' && 'message' in exceptionResponse) {
         message = (exceptionResponse as any).message;
-        
-        if ('code' in exceptionResponse) {
-          code = (exceptionResponse as any).code;
-        }
       } else {
         message = exceptionResponse;
       }
+      
+      code = status; // Сохраняем оригинальный статус код
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Внутренняя ошибка сервера';
-    }
-    
-    if (code === 500 && status !== 500) {
-      code = status;
     }
     
     const errorResponse = {

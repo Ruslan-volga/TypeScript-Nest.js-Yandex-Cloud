@@ -10,7 +10,8 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  NotFoundException
 } from '@nestjs/common';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -72,7 +73,7 @@ export class UserController {
   getUserById(@Param('id') id: string) {
     const user = this.users.find(u => u.id === parseInt(id));
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw new NotFoundException('Пользователь не найден');
     }
     
     return {
@@ -88,7 +89,7 @@ export class UserController {
   ) {
     const userIndex = this.users.findIndex(u => u.id === parseInt(id));
     if (userIndex === -1) {
-      throw new Error('Пользователь не найден');
+      throw new NotFoundException('Пользователь не найден');
     }
     
     this.users[userIndex] = {
@@ -108,7 +109,7 @@ export class UserController {
   deleteUser(@Param('id') id: string) {
     const userIndex = this.users.findIndex(u => u.id === parseInt(id));
     if (userIndex === -1) {
-      throw new Error('Пользователь не найден');
+      throw new NotFoundException('Пользователь не найден');
     }
     
     this.users.splice(userIndex, 1);
