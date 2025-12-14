@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .button-home {
+            background: rgba(255, 204, 0, 0.2);
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+        
+        .button-logout {
+            background: rgba(255, 68, 68, 0.2);
+            border-color: rgba(255, 68, 68, 0.3);
+        }
+        
+        .profile-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .profile-info h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .profile-info .provider {
+            color: #ffcc00;
+            font-size: 1.1em;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .detail-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .detail-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-5px);
+        }
+        
+        .detail-card h3 {
+            color: #ffcc00;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .detail-card p {
+            font-size: 1.3em;
+            font-weight: 600;
+            word-break: break-all;
+        }
+        
+        .token-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .token-section h3 {
+            color: #ffcc00;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .token-code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .note {
+            background: rgba(255, 193, 7, 0.15);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 30px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .nav-buttons {
+                justify-content: center;
+            }
+            
+            .profile-card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><%= title %></h1>
+            <div class="nav-buttons">
+                <a href="/" class="button button-home">🏠 На главную</a>
+                <a href="/logout" class="button button-logout">🚪 Выйти</a>
+            </div>
+        </div>
+        
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar">
+                    <%= user.displayName.charAt(0).toUpperCase() %>
+                </div>
+                <div class="profile-info">
+                    <h2><%= user.displayName %></h2>
+                    <p class="provider">🔗 Авторизован через <%= user.provider.toUpperCase() %></p>
+                </div>
+            </div>
+            
+            <div class="details-grid">
+                <div class="detail-card">
+                    <h3>🆔 ID пользователя</h3>
+                    <p><%= user.id %></p>
+                </div>
+                
+                <div class="detail-card">
+                    <h3>👋 Отображаемое имя</h3>
+                    <p><%= user.displayName %></p>
+                </div>
+                
+                <div class="detail-card">
+                    <h3>📧 Email адрес</h3>
+                    <p><%= user.email %></p>
+                </div>
+                
+                <div class="detail-card">
+                    <h3>🔧 Способ входа</h3>
+                    <p><%= user.provider.toUpperCase() %></p>
+                </div>
+            </div>
+            
+            <% if (user.accessToken) { %>
+                <div class="token-section">
+                    <h3>🔑 OAuth токены</h3>
+                    <p><strong>Access Token:</strong></p>
+                    <div class="token-code"><%= user.accessToken %></div>
+                    
+                    <% if (user.refreshToken) { %>
+                        <p><strong>Refresh Token:</strong></p>
+                        <div class="token-code"><%= user.refreshToken %></div>
+                    <% } %>
+                    
+                    <% if (user.tokenExpires) { %>
+                        <p><strong>Токен действителен до:</strong> 
+                            <%= new Date(user.tokenExpires).toLocaleString('ru-RU') %>
+                        </p>
+                    <% } %>
+                </div>
+            <% } %>
+            
+            <div class="note">
+                <strong>📝 Примечание:</strong> Это демо-приложение показывает тестовые данные. 
+                В реальном приложении здесь будет информация из вашего аккаунта Яндекс, 
+                полученная через OAuth API.
+            </div>
+        </div>
+        
+        <footer>
+            <p>© <%= currentYear %> Яндекс OAuth Demo • <a href="/info" style="color: #ffcc00;">Информация о приложении</a></p>
+            <p>Ваша сессия активна. Все данные обновляются в реальном времени.</p>
+        </footer>
+    </div>
+</body>
+</html>

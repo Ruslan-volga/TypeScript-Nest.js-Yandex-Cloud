@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 30px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        
+        .user-info {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .user-info h3 {
+            color: #ffcc00;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .user-details {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .user-details p {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            font-size: 1.2em;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #ffcc00;
+            color: #333;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 15px 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3);
+        }
+        
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 204, 0, 0.4);
+            background: #ffd633;
+        }
+        
+        .button-logout {
+            background: #ff4444;
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.3);
+        }
+        
+        .button-logout:hover {
+            background: #ff6666;
+            box-shadow: 0 8px 25px rgba(255, 68, 68, 0.4);
+        }
+        
+        .button-profile {
+            background: #4CAF50;
+            color: white;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .button-profile:hover {
+            background: #66BB6A;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+        
+        .info-text {
+            margin-top: 30px;
+            font-size: 0.9em;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+        
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+        
+        .logo {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .button {
+                display: block;
+                margin: 10px 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔐</div>
+        <h1><%= title %></h1>
+        
+        <% if (!user) { %>
+            <h2>Войдите через Яндекс, чтобы продолжить</h2>
+            
+            <div class="warning">
+                <strong>⚠️ Внимание:</strong> Это демо-приложение использует тестовые данные. 
+                Для получения реального профиля нужно настроить интеграцию с API Яндекс.
+            </div>
+            
+            <a href="/auth/yandex" class="button">
+                🔑 Войти через Яндекс
+            </a>
+            
+            <p class="info-text">
+                После нажатия кнопки вы будете перенаправлены на страницу авторизации Яндекс.
+                Для тестирования используйте тестовый аккаунт.
+            </p>
+            
+        <% } else { %>
+            <h2>Добро пожаловать, <%= user.displayName %>!</h2>
+            
+            <div class="user-info">
+                <h3>👤 Ваш профиль</h3>
+                <div class="user-details">
+                    <p><span class="icon">🆔</span> ID: <strong><%= user.id %></strong></p>
+                    <p><span class="icon">👋</span> Имя: <strong><%= user.displayName %></strong></p>
+                    <p><span class="icon">📧</span> Email: <strong><%= user.email %></strong></p>
+                    <p><span class="icon">🔧</span> Провайдер: <strong><%= user.provider %></strong></p>
+                    <% if (user.accessToken) { %>
+                        <p><span class="icon">🔑</span> Access Token: <strong style="word-break: break-all;"><%= user.accessToken.slice(0, 20) %>...</strong></p>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <a href="/profile" class="button button-profile">📋 Перейти в профиль</a>
+                <a href="/info" class="button">ℹ️ Информация о приложении</a>
+                <a href="/logout" class="button button-logout">🚪 Выйти</a>
+            </div>
+            
+            <p class="info-text">
+                Текущая сессия активна. Вы можете выйти в любое время.
+                Ваши данные сохраняются только во время текущей сессии.
+            </p>
+        <% } %>
+        
+        <footer>
+            <p>© <%= currentYear %> Яндекс OAuth Demo • Версия 1.0.0</p>
+            <p>Это демонстрационное приложение для тестирования авторизации</p>
+        </footer>
+    </div>
+</body>
+</html>
